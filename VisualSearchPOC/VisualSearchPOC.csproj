@@ -8,8 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.BedrockRuntime" Version="4.0.9.2" />
-    <PackageReference Include="AWSSDK.Core" Version="4.0.3" />
+    <PackageReference Include="AWSSDK.BedrockRuntime" Version="4.0.9.3" />
+    <PackageReference Include="AWSSDK.Core" Version="4.0.3.1" />
+    <PackageReference Include="AWSSDK.Rekognition" Version="4.0.3.3" />
     <PackageReference Include="OpenSearch.Client" Version="1.8.0" />
     <PackageReference Include="OpenSearch.Net" Version="1.8.0" />
     <PackageReference Include="OpenSearch.Net.Auth.AwsSigV4" Version="1.8.0" />

@@ -38,7 +38,7 @@ namespace VisualSearchPOC
             {
                 RegionEndpoint = Amazon.RegionEndpoint.USWest2
             };
-            var client = new AmazonBedrockRuntimeClient(config);
+            var client = new AmazonBedrockRuntimeClient( config);
             return client;
         }
     }
@@ -326,10 +326,15 @@ namespace VisualSearchPOC
         public string FileId { get; set; }
         public FolderDetail FolderDetail { get; set; }
 
+         
+
         public string TenantId { get; set; }
         public bool IsDefault { get; set; }
         public bool IsActive { get; set; }
         public float[] Embedding { get; set; }
+        public List<string> Categories { get; set; }
+        public List<string> Labels { get; set; }
+        public List<string> Parents { get; set; }
     }
     public class FolderDetail
     {

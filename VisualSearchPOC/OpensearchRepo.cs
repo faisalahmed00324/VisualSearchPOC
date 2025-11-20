@@ -327,7 +327,7 @@ namespace VisualSearchPOC
         public FolderDetail FolderDetail { get; set; }
 
          
-
+        public float[] TextEmbedding { get; set; }
         public string TenantId { get; set; }
         public bool IsDefault { get; set; }
         public bool IsActive { get; set; }

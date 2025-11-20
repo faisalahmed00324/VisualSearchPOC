@@ -1,3 +1,8 @@
+using Amazon;
+using Amazon.BedrockRuntime;
+using Amazon.BedrockRuntime.Model;
+using Amazon.Rekognition;
+using Amazon.Rekognition.Model;
 using System;
 using System.IO;
 using System.Linq;
@@ -14,6 +19,44 @@ namespace VisualSearchPOC
 {
     public static class BedrockEmbeddings
     {
+        public static async Task<float[]> GetTextEmbeddingAsync(
+            AmazonBedrockRuntimeClient client
+           )
+        {
+            var requestBody = JsonSerializer.Serialize(new
+            {
+                inputText = "A photo of a cat",
+            });
+            var request = new InvokeModelRequest
+            {
+                ModelId = "amazon.titan-embed-image-v1",
+                ContentType = "application/json",
+                Body = new MemoryStream(Encoding.UTF8.GetBytes(requestBody))
+            };
+            var response = await client.InvokeModelAsync(request);
+            response.Body.Position = 0;
+
+            string responseString;
+            using (var reader = new StreamReader(response.Body))
+            {
+                responseString = reader.ReadToEndAsync().Result;
+            }
+
+            // Parse embeddings
+            float[] embeddings;
+            using (var doc = System.Text.Json.JsonDocument.Parse(responseString))
+            {
+                var embeddingArray = doc.RootElement.GetProperty("embedding");
+
+                embeddings = new float[embeddingArray.GetArrayLength()];
+                int i = 0;
+                foreach (var val in embeddingArray.EnumerateArray())
+                {
+                    embeddings[i++] = val.GetSingle();
+                }
+            }
+            return embeddings;
+        }
         public static async Task<float[]> GetImageEmbeddingAsync(AmazonBedrockRuntimeClient client, string base64Image)
         {
             // Prepare request
@@ -281,7 +324,7 @@ namespace VisualSearchPOC
                     Bytes = new MemoryStream(imageBytes)
                 },
                 MaxLabels = 10,
-                MinConfidence = 90F
+                MinConfidence = 70F
             };
 
             try
@@ -302,5 +345,55 @@ namespace VisualSearchPOC
         }
 
     }
+        
+    public static class ImageDesc
+    {
+        public static async Task<string> GetImageDescriptionAsync(
+            AmazonBedrockRuntimeClient client,
+            string base64Image)
+        {
+
+            // Build request payload
+            var requestBody = new
+            {
+                messages = new[]
+            {
+                new {
+                    role = "user",
+                    content = new object[]
+                    {
+                        new { type = "text", text = "Describe this image in detail." },
+                        new {
+                            type = "image",
+                            source = new {
+                                type = "base64",
+                                data = base64Image
+                            }
+                        }
+                    }
+                }
+            },
+                max_tokens = 200
+            };
+
+
+            string body = JsonSerializer.Serialize(requestBody);
+
+            var request = new InvokeModelRequest
+            {
+                ModelId = "arn:aws:bedrock:us-west-2:591165668488:inference-profile/us.amazon.nova-lite-v1:0",
+                ContentType = "application/json",
+                Body = new MemoryStream(Encoding.UTF8.GetBytes(body))
+            };
+
+            var response = await client.InvokeModelAsync(request);
+
+            using var reader = new StreamReader(response.Body);
+            string responseBody = await reader.ReadToEndAsync();
+
+            return responseBody;
+        }
+    
+    } 
         
 }

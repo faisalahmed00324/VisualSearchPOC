@@ -12,8 +12,19 @@ try
 {
     // var text = "Two cat sleeping on a red cloth on a bed";
     //var embedding = await BedrockEmbeddings.GetTextEmbeddingAsync(bedrockClient, text);
-    //var openSearch = new OpenSearchRepository<ImageDocument>(Providers.GetOpenSearchClient(), "image_vector_poc");
+   // var textEmbeddion = await BedrockEmbeddings.GetTextEmbeddingAsync(bedrockClient);
+    var openSearch = new OpenSearchRepository<ImageDocument>(Providers.GetOpenSearchClient(), "image_vector_poc");
+   //var result = openSearch.Search( page: 1, pageSize: 1000);
+
+    // var textEmbeddingService = new ClipTextEmbeddingService();
+    //var embedding = textEmbeddingService.Get("A scenic view of mountains during sunrise");
+    //var clipImageEmbeddingService = new ClipImageEmbedding();
+    //var base64Image = Convert.ToBase64String(File.ReadAllBytes("./Images/image_10.jpg"));
+    //var embedding = clipImageEmbeddingService.GetEmbedding(base64Image);
+    int a = 1;
+    //await openSearch.DeleteIndex();
     //var data = await openSearch.GetAllAsync();
+    int i = 1;
     //foreach (var item in data)
     //{
     //    // Build a readable labels string
@@ -31,7 +42,7 @@ try
     //        labelsOutput = item.Labels.ToString();
     //    }
 
-    //    Console.WriteLine($"Document ID: {item.Id}, Item ID: {item.ListItemId}, Labels: {labelsOutput}");
+    //    Console.WriteLine($"No: {i} Document ID: {item.Id}, Item ID: {item.ListItemId}, Labels: {labelsOutput}"); i++;
     //}
     //              await openSearch.DeleteIndex();
     //var searchResults =  openSearch.Search(q => q
@@ -49,7 +60,9 @@ try
     //Console.WriteLine($"Embedding length: {embedding.Length}");
     //Console.WriteLine("First10 values: " + string.Join(", ", embedding.Take(Math.Min(10, embedding.Length))));
     // await VisualSearchOperation.SaveData();
-    var result = await ImageRekognition.GetImageLabelsAsync("./Images/cd_2607541.jpeg");
+    //var result = await ImageRekognition.GetImageLabelsAsync("./Images/fruits_68525.jpeg");
+    var base64Image = Convert.ToBase64String(File.ReadAllBytes("./Images/image_10.jpg"));
+    var desc = await ImageDesc.GetImageDescriptionAsync(bedrockClient, base64Image);
 }
 catch (Exception ex)
 {

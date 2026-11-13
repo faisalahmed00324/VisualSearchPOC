@@ -290,7 +290,8 @@ namespace VisualSearchPOC
             var bodyJson = JsonSerializer.Serialize(requestBody);
             var request = new InvokeModelRequest
             {
-                ModelId = "arn:aws:bedrock:us-west-2:591165668488:inference-profile/global.anthropic.claude-sonnet-4-20250514-v1:0",
+                ModelId = Environment.GetEnvironmentVariable("BEDROCK_CLAUDE_MODEL_ID")
+                    ?? "global.anthropic.claude-sonnet-4-20250514-v1:0",
                 Body = new MemoryStream(Encoding.UTF8.GetBytes(bodyJson)),
                 ContentType = "application/json",
                 Accept = "application/json"
@@ -309,7 +310,7 @@ namespace VisualSearchPOC
     {
         public static async Task<List<Label>> GetImageLabelsAsync(string imagePath)
         {
-            var rekognitionClient = new AmazonRekognitionClient(Amazon.RegionEndpoint.USEast1);
+            using var rekognitionClient = new AmazonRekognitionClient(Providers.GetRegion());
 
             // Path to your image
             
@@ -327,19 +328,12 @@ namespace VisualSearchPOC
                 MinConfidence = 70F
             };
 
-            try
+            var detectLabelsResponse = await rekognitionClient.DetectLabelsAsync(detectLabelsRequest);
+            labels = detectLabelsResponse.Labels;
+            Console.WriteLine("Detected labels in the image:");
+            foreach (var label in detectLabelsResponse.Labels)
             {
-                var detectLabelsResponse = await rekognitionClient.DetectLabelsAsync(detectLabelsRequest);
-                labels = detectLabelsResponse.Labels;
-                Console.WriteLine("Detected labels in the image:");
-                foreach (var label in detectLabelsResponse.Labels)
-                {
-                    Console.WriteLine($"{label.Name} - Confidence: {label.Confidence}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"{label.Name} - Confidence: {label.Confidence}");
             }
             return labels;
         }
@@ -350,7 +344,8 @@ namespace VisualSearchPOC
     {
         public static async Task<string> GetImageDescriptionAsync(
             AmazonBedrockRuntimeClient client,
-            string base64Image)
+            string base64Image,
+            string imageFormat = "jpeg")
         {
 
             // Build request payload
@@ -362,18 +357,19 @@ namespace VisualSearchPOC
                     role = "user",
                     content = new object[]
                     {
-                        new { type = "text", text = "Describe this image in detail." },
+                        new { text = "Describe this image in detail." },
                         new {
-                            type = "image",
-                            source = new {
-                                type = "base64",
-                                data = base64Image
+                            image = new {
+                                format = imageFormat,
+                                source = new {
+                                    bytes = base64Image
+                                }
                             }
                         }
                     }
                 }
             },
-                max_tokens = 200
+                inferenceConfig = new { maxTokens = 200 }
             };
 
 
@@ -381,7 +377,8 @@ namespace VisualSearchPOC
 
             var request = new InvokeModelRequest
             {
-                ModelId = "arn:aws:bedrock:us-west-2:591165668488:inference-profile/us.amazon.nova-lite-v1:0",
+                ModelId = Environment.GetEnvironmentVariable("BEDROCK_DESCRIPTION_MODEL_ID")
+                    ?? "us.amazon.nova-lite-v1:0",
                 ContentType = "application/json",
                 Body = new MemoryStream(Encoding.UTF8.GetBytes(body))
             };

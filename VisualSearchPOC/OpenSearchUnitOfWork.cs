@@ -24,7 +24,6 @@ namespace VisualSearchPOC
     {
         private readonly IOpenSearchClient _client;
         private readonly string _indexName;
-        private readonly string _tenantId;
         private readonly List<Action<BulkDescriptor>> _operations = new List<Action<BulkDescriptor>>();
         private readonly List<Action> _scriptOperations = new List<Action>();
         private bool _committedOrRolledBack;
@@ -33,15 +32,11 @@ namespace VisualSearchPOC
         {
             _client = client;
             _indexName = indexName ?? throw new ArgumentNullException(nameof(indexName));
-            _tenantId = "5b8eec4c8986220d9c56fa93";
         }
 
         public void EnqueueIndex(string id, T document)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
-            // Ensure tenant id if doc has TenantId property
-            var tenantProp = typeof(T).GetProperty("TenantId");
-            if (tenantProp != null && tenantProp.CanWrite) tenantProp.SetValue(document, _tenantId);
 
             _operations.Add(b => b.Index<T>(op => op
                 .Index(_indexName)
@@ -53,8 +48,6 @@ namespace VisualSearchPOC
         public void EnqueueUpdate(string id, T document)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
-            var tenantProp = typeof(T).GetProperty("TenantId");
-            if (tenantProp != null && tenantProp.CanWrite) tenantProp.SetValue(document, _tenantId);
 
             _operations.Add(b => b.Update<T>(op => op
                 .Index(_indexName)
@@ -73,11 +66,6 @@ namespace VisualSearchPOC
 
             _scriptOperations.Add(() =>
             {
-                //var query = new QueryContainerDescriptor<T>().Bool(b => b
-                //    .Must(queryBuilder)
-                //    .Filter(f => f.Term("tenantId", _tenantId)) // optional tenant filter
-                //);
-
                 var response = _client.UpdateByQuery<T>(u => u
                     .Index(_indexName)
                     .Query(queryBuilder)

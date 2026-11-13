@@ -57,9 +57,17 @@ Thumbs.db
 
 # Environment variables
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
 
 # Application-specific
 appsettings.local.json
 appsettings.development.json
+appsettings.*.local.json
+*.pem
+*.key
+
+# Keep demo inputs and their metadata local
+Images/

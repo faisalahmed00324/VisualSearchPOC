@@ -14,19 +14,28 @@ namespace VisualSearchPOC
 {
     public static class Providers
     {
+        public static Amazon.RegionEndpoint GetRegion()
+        {
+            var region = Environment.GetEnvironmentVariable("AWS_REGION");
+            return Amazon.RegionEndpoint.GetBySystemName(
+                string.IsNullOrWhiteSpace(region) ? "us-west-2" : region);
+        }
+
         public static  OpenSearchClient GetOpenSearchClient()
         {
-           
-            //var region = "us-west-2"; // must match your OpenSearch region
-            var credentials = DefaultAWSCredentialsIdentityResolver.GetCredentials();
-            AwsSigV4HttpConnection connection = new AwsSigV4HttpConnection(credentials, Amazon.RegionEndpoint.USWest2);
+            var endpoint = Environment.GetEnvironmentVariable("OPENSEARCH_ENDPOINT");
+            if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) ||
+                uri.Scheme != Uri.UriSchemeHttps ||
+                !string.IsNullOrEmpty(uri.UserInfo))
+            {
+                throw new InvalidOperationException(
+                    "Set OPENSEARCH_ENDPOINT to your HTTPS OpenSearch endpoint without embedded credentials.");
+            }
 
-            var pool = new SingleNodeConnectionPool(new Uri("https://vpc-image-vectordb-wx6kcbafqjatz632bjrvvhgmvi.us-west-2.es.amazonaws.com"));
-           
-            //var pool = new SingleNodeConnectionPool(new Uri("https://search-image-vector-poc-db-srak6z64bf773ploiseowhqmtq.us-west-2.es.amazonaws.com"));
-            // AwsSigV4HttpConnection connection = new AwsSigV4HttpConnection(credentials, Amazon.RegionEndpoint.USWest2);
-            var settings = new ConnectionSettings(pool, connection)
-                .DisableDirectStreaming(); // <--- log request/response
+            var credentials = DefaultAWSCredentialsIdentityResolver.GetCredentials();
+            var connection = new AwsSigV4HttpConnection(credentials, GetRegion());
+            var pool = new SingleNodeConnectionPool(uri);
+            var settings = new ConnectionSettings(pool, connection);
 
             var client = new OpenSearchClient(settings);
             return client;
@@ -36,7 +45,7 @@ namespace VisualSearchPOC
             
             var config = new AmazonBedrockRuntimeConfig
             {
-                RegionEndpoint = Amazon.RegionEndpoint.USWest2
+                RegionEndpoint = GetRegion()
             };
             var client = new AmazonBedrockRuntimeClient( config);
             return client;
@@ -237,19 +246,6 @@ namespace VisualSearchPOC
                )
         {
             int from = (page - 1) * pageSize;
-
-            //var withTenantQuery = new Func<QueryContainerDescriptor<T>, QueryContainer>(q =>
-            //        q.Bool(b => b
-            //            .Filter(
-            //                m => m.Term(t => t.Field(f => f.TenantId).Value("5c78e35578415726dc91a62e")),
-            //                m => m.Term(t => t.Field(f => f.IsActive).Value(true))
-
-            //            )
-            //            .Must(
-            //                 m => query(q)
-            //            )
-            //        )
-            //  );
 
             var response = _client.SearchAsync<T>(s => s
                 .Index(_indexName)
